@@ -3,10 +3,15 @@ spring:
     name: efactura-app
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
+    group:
+      # Producción en DO/Docker: cloud-test aplica prod + pool Hikari reducido
+      cloud-test:
+        - prod
 
 ---
+# Configuración común desarrollo (local) y producción (prod). Secretos y URLs vía env.
 spring:
-  config.activate.on-profile: local
+  config.activate.on-profile: local | prod
   datasource:
     # Sufijo opcional, p. ej. DigitalOcean: DB_URL_SUFFIX=?sslmode=require
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:efactura}${DB_URL_SUFFIX:}
@@ -59,12 +64,6 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
-
-logging:
-  level:
-    root: INFO
-    ec.tusaas: DEBUG
-    ec.tusaas.efactura.sri: DEBUG
 
 efactura:
   redis:
@@ -150,8 +149,19 @@ efactura:
     demo-admin-password: ${DEMO_ADMIN_PASSWORD:Admin123!}
 
 ---
+# Solo desarrollo local (mvn spring-boot:run)
+spring:
+  config.activate.on-profile: local
+
+logging:
+  level:
+    root: INFO
+    ec.tusaas: DEBUG
+    ec.tusaas.efactura.sri: DEBUG
+
+---
 # Managed Postgres con límite bajo (p. ej. DigitalOcean 1 GB / 22 conexiones).
-# Activar: SPRING_PROFILES_ACTIVE=local,cloud-test
+# Se activa con SPRING_PROFILES_ACTIVE=cloud-test (incluye prod vía spring.profiles.group).
 spring:
   config.activate.on-profile: cloud-test
   datasource:
@@ -161,3 +171,119 @@ spring:
       idle-timeout: ${HIKARI_IDLE_TIMEOUT_MS:240000}
       max-lifetime: ${HIKARI_MAX_LIFETIME_MS:480000}
       leak-detection-threshold: ${HIKARI_LEAK_DETECTION_MS:60000}
+
+---
+# Perfil producción: DigitalOcean / Docker / PostgreSQL managed
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}${DB_URL_SUFFIX:}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: efactura-app
+      maximum-pool-size: ${HIKARI_MAXIMUM_POOL_SIZE:6}
+      minimum-idle: ${HIKARI_MINIMUM_IDLE:1}
+      idle-timeout: ${HIKARI_IDLE_TIMEOUT_MS:240000}
+      max-lifetime: ${HIKARI_MAX_LIFETIME_MS:480000}
+      connection-timeout: ${HIKARI_CONNECTION_TIMEOUT_MS:20000}
+      connection-test-query: SELECT 1
+      keepalive-time: ${HIKARI_KEEPALIVE_MS:30000}
+      leak-detection-threshold: ${HIKARI_LEAK_DETECTION_MS:60000}
+
+  flyway:
+    enabled: ${SPRING_FLYWAY_ENABLED:false}
+    locations: classpath:db/migration
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate.jdbc.time_zone: UTC
+      hibernate.format_sql: false
+
+server:
+  port: ${SERVER_PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+springdoc:
+  swagger-ui:
+    enabled: false
+
+logging:
+  level:
+    root: INFO
+    ec.tusaas: INFO
+    ec.tusaas.efactura.sri: INFO
+
+efactura:
+  redis:
+    enabled: ${EFACTURA_REDIS_ENABLED:false}
+  crypto:
+    master-secret: ${EFACTURA_CRYPTO_MASTER}
+  storage:
+    provider: ${EFACTURA_STORAGE_PROVIDER:local}
+    object-root: ${EFACTURA_STORAGE_OBJECT_ROOT:/data}
+    local-root: ${EFACTURA_STORAGE_LOCAL:/data/certificados}
+    comprobantes-root: ${EFACTURA_COMPROBANTES_LOCAL:/data/comprobantes}
+    logos-root: ${EFACTURA_LOGOS_LOCAL:/data/logos}
+    bucket: ${EFACTURA_SPACES_BUCKET:}
+    region: ${EFACTURA_SPACES_REGION:nyc3}
+    endpoint: ${EFACTURA_SPACES_ENDPOINT:}
+    access-key: ${EFACTURA_SPACES_ACCESS_KEY:}
+    secret-key: ${EFACTURA_SPACES_SECRET_KEY:}
+    public-base-url: ${EFACTURA_STORAGE_PUBLIC_BASE_URL:}
+  sri-download:
+    enabled: ${EFACTURA_SRI_DOWNLOAD_ENABLED:true}
+    base-url: ${EFACTURA_SRI_DOWNLOAD_BASE_URL:http://127.0.0.1:8085}
+    service-api-key: ${EFACTURA_SRI_DOWNLOAD_API_KEY}
+    connect-timeout-seconds: ${EFACTURA_SRI_DOWNLOAD_CONNECT_TIMEOUT_SEC:15}
+    read-timeout-seconds: ${EFACTURA_SRI_DOWNLOAD_READ_TIMEOUT_SEC:120}
+  sri:
+    soap-enabled: ${SRI_SOAP_ENABLED:false}
+    recepcion-url-pruebas: ${SRI_RECEPCION_PRUEBAS:https://celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl}
+    autorizacion-url-pruebas: ${SRI_AUTORIZACION_PRUEBAS:https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl}
+    recepcion-url-produccion: ${SRI_RECEPCION_PROD:https://cel.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl}
+    autorizacion-url-produccion: ${SRI_AUTORIZACION_PROD:https://cel.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl}
+    xsd-validation-enabled: ${SRI_XSD_VALIDATION_ENABLED:false}
+  jwt:
+    secret: ${JWT_SECRET}
+    access-token-minutes: ${JWT_ACCESS_MINUTES:15}
+    refresh-token-days: ${JWT_REFRESH_DAYS:7}
+  suite:
+    identity:
+      enabled: ${EFACTURA_SUITE_IDENTITY_ENABLED:true}
+      issuer: ${SUITE_JWT_ISSUER}
+      audience: ${SUITE_JWT_AUD:suite}
+      secret: ${SUITE_JWT_SECRET}
+      identity-base-url: ${SUITE_IDENTITY_PUBLIC_BASE_URL}
+      company-slug: ${EFACTURA_SUITE_IDENTITY_COMPANY_SLUG:suite-demo}
+      public-bootstrap-enabled: ${EFACTURA_SUITE_TENANT_BOOTSTRAP:false}
+      suite-shell-base-url: ${SUITE_SHELL_BASE_URL}
+      cartera-base-url: ${CARTERA_UI_BASE_URL}
+      pos-base-url: ${POS_UI_BASE_URL}
+  invitacion:
+    log-token-servidor: false
+  notifications:
+    enabled: ${NOTIFICATIONS_ENABLED:true}
+    app-base-url: ${APP_BASE_URL}
+    brevo:
+      api-key: ${BREVO_API_KEY:}
+  cors:
+    allowed-origins: ${CORS_ORIGINS:}
+  bootstrap:
+    enabled: ${EFACTURA_BOOTSTRAP:false}

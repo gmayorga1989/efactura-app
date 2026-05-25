@@ -45,7 +45,7 @@ jobs:
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
-    environment: EFACTURA_CI_CD
+    environment: API_EFACTURA_CI_CD
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: appleboy/ssh-action@v1.2.0

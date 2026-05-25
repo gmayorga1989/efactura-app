@@ -30,6 +30,7 @@ Puerto por defecto: **8080**.
 |-----------|-----------|
 | [docs/DEPLOY-DIGITALOCEAN.md](docs/DEPLOY-DIGITALOCEAN.md) | Checklist operativo |
 | [docs/DEPLOY-CI-CD-ARQUITECTURA.md](docs/DEPLOY-CI-CD-ARQUITECTURA.md) | CI/CD, Dockerfile, entrypoint |
+| [../../docs/DEPLOY-SERVIDOR-COMANDOS.md](../../docs/DEPLOY-SERVIDOR-COMANDOS.md) | Comandos `mkdir` + `scp` (monorepo) |
 
 Cada push a **`main`** compila, publica en **GHCR** y despliega por SSH (environment `EFACTURA_CI_CD`).
 
