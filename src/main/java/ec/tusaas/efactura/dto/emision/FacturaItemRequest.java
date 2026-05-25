@@ -1,0 +1,25 @@
+package ec.tusaas.efactura.dto.emision;
+
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
+
+public record FacturaItemRequest(
+    @NotBlank @Size(max = 50) String codigoPrincipal,
+    @Size(max = 50) String codigoAuxiliar,
+    @NotBlank @Size(max = 500) String descripcion,
+    @NotNull @DecimalMin(value = "0.000001") BigDecimal cantidad,
+    @NotNull @DecimalMin(value = "0.000000") BigDecimal precioUnitario,
+    @DecimalMin(value = "0.00") BigDecimal descuento,
+    @DecimalMin(value = "0.00") BigDecimal ivaPorcentaje,
+    String ivaCodigoPorcentaje,
+    Map<String, Object> customData) {
+
+  public Map<String, Object> safeCustomData() {
+    return customData == null ? new HashMap<>() : customData;
+  }
+}

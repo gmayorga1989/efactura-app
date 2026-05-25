@@ -1,0 +1,163 @@
+spring:
+  application:
+    name: efactura-app
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+
+---
+spring:
+  config.activate.on-profile: local
+  datasource:
+    # Sufijo opcional, p. ej. DigitalOcean: DB_URL_SUFFIX=?sslmode=require
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:efactura}${DB_URL_SUFFIX:}
+    username: ${DB_USER:efactura}
+    password: ${DB_PASSWORD:efactura_dev}
+    hikari:
+      pool-name: efactura-app
+      maximum-pool-size: ${HIKARI_MAXIMUM_POOL_SIZE:10}
+      minimum-idle: ${HIKARI_MINIMUM_IDLE:2}
+      idle-timeout: ${HIKARI_IDLE_TIMEOUT_MS:300000}
+      max-lifetime: ${HIKARI_MAX_LIFETIME_MS:600000}
+      connection-timeout: ${HIKARI_CONNECTION_TIMEOUT_MS:20000}
+      connection-test-query: SELECT 1
+      keepalive-time: ${HIKARI_KEEPALIVE_MS:30000}
+      leak-detection-threshold: ${HIKARI_LEAK_DETECTION_MS:0}
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2s
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate.jdbc.time_zone: UTC
+      hibernate.format_sql: false
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 12MB
+
+server:
+  port: ${SERVER_PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    root: INFO
+    ec.tusaas: DEBUG
+    ec.tusaas.efactura.sri: DEBUG
+
+efactura:
+  redis:
+    enabled: ${EFACTURA_REDIS_ENABLED:false}
+  crypto:
+    master-secret: ${EFACTURA_CRYPTO_MASTER:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+  storage:
+    provider: ${EFACTURA_STORAGE_PROVIDER:spaces}
+    object-root: ${EFACTURA_STORAGE_OBJECT_ROOT:./data}
+    local-root: ${EFACTURA_STORAGE_LOCAL:./data/certificados}
+    comprobantes-root: ${EFACTURA_COMPROBANTES_LOCAL:./data/comprobantes}
+    logos-root: ${EFACTURA_LOGOS_LOCAL:./data/logos}
+    bucket: ${EFACTURA_SPACES_BUCKET:}
+    region: ${EFACTURA_SPACES_REGION:nyc3}
+    endpoint: ${EFACTURA_SPACES_ENDPOINT:}
+    access-key: ${EFACTURA_SPACES_ACCESS_KEY:}
+    secret-key: ${EFACTURA_SPACES_SECRET_KEY:}
+    public-base-url: ${EFACTURA_STORAGE_PUBLIC_BASE_URL:}
+  sri-download:
+    enabled: ${EFACTURA_SRI_DOWNLOAD_ENABLED:true}
+    base-url: ${EFACTURA_SRI_DOWNLOAD_BASE_URL:http://localhost:8085}
+    service-api-key: ${EFACTURA_SRI_DOWNLOAD_API_KEY:dev-sri-download-key-change-me}
+    connect-timeout-seconds: ${EFACTURA_SRI_DOWNLOAD_CONNECT_TIMEOUT_SEC:15}
+    read-timeout-seconds: ${EFACTURA_SRI_DOWNLOAD_READ_TIMEOUT_SEC:120}
+  sri:
+    # En local, true por defecto (celcer). En prod use SRI_SOAP_ENABLED explícito.
+    soap-enabled: ${SRI_SOAP_ENABLED:true}
+    recepcion-url-pruebas: ${SRI_RECEPCION_PRUEBAS:https://celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl}
+    autorizacion-url-pruebas: ${SRI_AUTORIZACION_PRUEBAS:https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl}
+    recepcion-url-produccion: ${SRI_RECEPCION_PROD:https://cel.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl}
+    autorizacion-url-produccion: ${SRI_AUTORIZACION_PROD:https://cel.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl}
+    recepcion-timeout-ms: ${SRI_RECEPCION_TIMEOUT_MS:30000}
+    autorizacion-timeout-ms: ${SRI_AUTORIZACION_TIMEOUT_MS:90000}
+    xsd-validation-enabled: ${SRI_XSD_VALIDATION_ENABLED:false}
+    factura-xsd-path: ${SRI_FACTURA_XSD_PATH:}
+    nota-credito-xsd-path: ${SRI_NOTA_CREDITO_XSD_PATH:}
+    nota-debito-xsd-path: ${SRI_NOTA_DEBITO_XSD_PATH:}
+    liquidacion-compra-xsd-path: ${SRI_LIQUIDACION_COMPRA_XSD_PATH:}
+    guia-remision-xsd-path: ${SRI_GUIA_REMISION_XSD_PATH:}
+    retencion-xsd-path: ${SRI_RETENCION_XSD_PATH:}
+    catastro-base-url: ${SRI_CATASTRO_BASE_URL:https://srienlinea.sri.gob.ec/sri-catastro-sujeto-servicio-internet/rest}
+  jwt:
+    secret: ${JWT_SECRET:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+    access-token-minutes: ${JWT_ACCESS_MINUTES:15}
+    refresh-token-days: ${JWT_REFRESH_DAYS:7}
+    empresa-selector-minutes: ${JWT_EMPRESA_SELECTOR_MINUTES:10}
+    switch-max-token-age-minutes: ${JWT_SWITCH_MAX_AGE_MINUTES:0}
+    switch-require-mfa: ${JWT_SWITCH_REQUIRE_MFA:false}
+  suite:
+    identity:
+      # En perfil local del monorepo suele usarse el Identity Gateway; desactivar con EFACTURA_SUITE_IDENTITY_ENABLED=false.
+      enabled: ${EFACTURA_SUITE_IDENTITY_ENABLED:true}
+      issuer: ${SUITE_JWT_ISSUER:http://localhost:8092}
+      audience: ${SUITE_JWT_AUD:suite}
+      secret: ${SUITE_JWT_SECRET:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      identity-base-url: ${SUITE_IDENTITY_PUBLIC_BASE_URL:http://localhost:8092}
+      company-slug: ${EFACTURA_SUITE_IDENTITY_COMPANY_SLUG:suite-demo}
+      public-bootstrap-enabled: ${EFACTURA_SUITE_TENANT_BOOTSTRAP:true}
+      suite-shell-base-url: ${SUITE_SHELL_BASE_URL:http://localhost:4300}
+      cartera-base-url: ${CARTERA_UI_BASE_URL:http://localhost:4301}
+      pos-base-url: ${POS_UI_BASE_URL:http://localhost:4220}
+  invitacion:
+    expiracion-dias: ${INVITACION_EXPIRACION_DIAS:7}
+    log-token-servidor: ${INVITACION_LOG_TOKEN:false}
+  notifications:
+    enabled: ${NOTIFICATIONS_ENABLED:true}
+    provider: ${NOTIFICATIONS_PROVIDER:BREVO}
+    app-base-url: ${APP_BASE_URL:http://localhost:4200}
+    brevo:
+      base-url: ${BREVO_BASE_URL:https://api.brevo.com}
+      api-key: ${BREVO_API_KEY:}
+      sender-email: ${BREVO_SENDER_EMAIL:eduardo.mayorga@hotmail.es}
+      sender-name: ${BREVO_SENDER_NAME:eFactura}
+  cors:
+    # Patrones recomendados en local (cualquier puerto). En prod: lista explícita HTTPS vía CORS_ORIGINS.
+    allowed-origins: ${CORS_ORIGINS:http://localhost:*,http://127.0.0.1:*}
+  bootstrap:
+    enabled: ${EFACTURA_BOOTSTRAP:true}
+    platform-admin-email: ${PLATFORM_ADMIN_EMAIL:platform@efactura.local}
+    platform-admin-password: ${PLATFORM_ADMIN_PASSWORD:Admin123!}
+    demo-ruc: ${DEMO_RUC:1790012345001}
+    demo-admin-email: ${DEMO_ADMIN_EMAIL:admin@demo.local}
+    demo-admin-password: ${DEMO_ADMIN_PASSWORD:Admin123!}
+
+---
+# Managed Postgres con límite bajo (p. ej. DigitalOcean 1 GB / 22 conexiones).
+# Activar: SPRING_PROFILES_ACTIVE=local,cloud-test
+spring:
+  config.activate.on-profile: cloud-test
+  datasource:
+    hikari:
+      maximum-pool-size: ${HIKARI_MAXIMUM_POOL_SIZE:6}
+      minimum-idle: ${HIKARI_MINIMUM_IDLE:1}
+      idle-timeout: ${HIKARI_IDLE_TIMEOUT_MS:240000}
+      max-lifetime: ${HIKARI_MAX_LIFETIME_MS:480000}
+      leak-detection-threshold: ${HIKARI_LEAK_DETECTION_MS:60000}

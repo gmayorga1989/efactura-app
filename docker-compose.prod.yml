@@ -1,0 +1,46 @@
+# Producción en Droplet DigitalOcean. Requiere .env (copiar desde .env.example).
+# Imagen: GHCR publicada por GitHub Actions (.github/workflows/deploy.yml).
+#
+# En el servidor:
+#   export GITHUB_REPOSITORY_OWNER=tu-org
+#   docker login ghcr.io -u TU_USUARIO -p TU_PAT
+#   docker compose -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.prod.yml up -d
+
+services:
+  efactura-app:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-tu-org}/efactura-app:latest
+    container_name: efactura-app
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-cloud-test}
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}${DB_URL_SUFFIX}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_FLYWAY_ENABLED: "false"
+      EFACTURA_REDIS_ENABLED: "false"
+      EFACTURA_STORAGE_LOCAL: /data/certificados
+      EFACTURA_COMPROBANTES_LOCAL: /data/comprobantes
+      EFACTURA_LOGOS_LOCAL: /data/logos
+      EFACTURA_STORAGE_OBJECT_ROOT: /data
+    ports:
+      - "${EFACTURA_PORT:-8080}:8080"
+    volumes:
+      - efactura_certificados:/data/certificados
+      - efactura_comprobantes:/data/comprobantes
+      - efactura_logos:/data/logos
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 180s
+
+volumes:
+  efactura_certificados:
+  efactura_comprobantes:
+  efactura_logos:
