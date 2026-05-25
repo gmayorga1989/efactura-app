@@ -14,9 +14,10 @@ spring:
   config.activate.on-profile: local | prod
   datasource:
     # Sufijo opcional, p. ej. DigitalOcean: DB_URL_SUFFIX=?sslmode=require
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:efactura}${DB_URL_SUFFIX:}
-    username: ${DB_USER:efactura}
-    password: ${DB_PASSWORD:efactura_dev}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
     hikari:
       pool-name: efactura-app
       maximum-pool-size: ${HIKARI_MAXIMUM_POOL_SIZE:10}
@@ -180,9 +181,9 @@ spring:
       on-profile: prod
 
   datasource:
-    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}${DB_URL_SUFFIX:}
-    username: ${DB_USER}
-    password: ${DB_PASSWORD}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       pool-name: efactura-app
