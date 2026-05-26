@@ -22,6 +22,9 @@ public final class CotizacionPlantillaUtil {
     m.put("mostrarValidez", true);
     m.put("densidad", "normal");
     m.put("textoPie", "Gracias por su preferencia.");
+    m.put("fontFamily", "Inter, Segoe UI, sans-serif");
+    m.put("mostrarBordes", true);
+    m.put("bannerImageUrl", "");
     return m;
   }
 

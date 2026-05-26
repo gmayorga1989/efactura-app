@@ -24,7 +24,9 @@ import ec.tusaas.efactura.repository.ComprobanteArchivoRepository;
 import ec.tusaas.efactura.repository.ComprobanteDetalleRepository;
 import ec.tusaas.efactura.repository.ComprobanteLogSriRepository;
 import ec.tusaas.efactura.repository.ComprobanteRepository;
+import ec.tusaas.efactura.entity.Vendedor;
 import ec.tusaas.efactura.repository.PuntoEmisionRepository;
+import ec.tusaas.efactura.repository.VendedorRepository;
 import ec.tusaas.efactura.security.UsuarioPrincipal;
 import ec.tusaas.efactura.sri.ClaveAccesoGenerator;
 import ec.tusaas.efactura.sri.ComprobanteSriReemisionSupport;
@@ -80,6 +82,7 @@ public class FacturaElectronicaService {
   private final ApiKeyRepository apiKeyRepository;
   private final AuditoriaService auditoriaService;
   private final DashboardCacheService dashboardCacheService;
+  private final VendedorRepository vendedorRepository;
 
   @Transactional
   public ComprobanteResponse emitir(
@@ -151,6 +154,7 @@ public class FacturaElectronicaService {
       c.setOrigen("WEB");
     }
     c.setCustomData(customDataEnriquecida(request));
+    aplicarVendedor(c, empresaId, request);
     c.setUsuarioCreacion(principal.getEmail());
     c = comprobanteRepository.save(c);
     guardarDetalles(c, empresa, request.items(), principal.getEmail());
@@ -611,6 +615,7 @@ public class FacturaElectronicaService {
     c.setTipoEmision(empresa.getTipoEmision());
     c.setEstadoSri(ESTADO_BORRADOR);
     c.setCustomData(customDataEnriquecida(request));
+    aplicarVendedor(c, empresaId, request);
     c.setUsuarioModificacion(principal.getEmail());
     c.setFechaModificacion(Instant.now());
     c = comprobanteRepository.save(c);
@@ -660,6 +665,7 @@ public class FacturaElectronicaService {
     c.setIvaTotal(totales.iva());
     c.setValorTotal(totales.total());
     c.setCustomData(customDataEnriquecida(request));
+    aplicarVendedor(c, empresaId, request);
     c.setUsuarioModificacion(principal.getEmail());
     c.setFechaModificacion(Instant.now());
     c = comprobanteRepository.save(c);
@@ -690,6 +696,14 @@ public class FacturaElectronicaService {
     if (items.isEmpty()) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El borrador no tiene lineas de detalle");
     }
+    UUID vendedorId = c.getVendedor() != null ? c.getVendedor().getId() : null;
+    if (vendedorId == null && cd.get("vendedorId") != null) {
+      try {
+        vendedorId = UUID.fromString(String.valueOf(cd.get("vendedorId")));
+      } catch (IllegalArgumentException ignored) {
+        vendedorId = null;
+      }
+    }
     return new FacturaRequest(
         puntoId,
         c.getFechaEmision(),
@@ -700,6 +714,7 @@ public class FacturaElectronicaService {
         items,
         List.of(new PagoRequest("20", c.getValorTotal(), null, null)),
         cd,
+        vendedorId,
         null);
   }
 
@@ -846,7 +861,22 @@ public class FacturaElectronicaService {
       }
       cd.put("pagos", pagos);
     }
+    if (request.vendedorId() != null) {
+      cd.put("vendedorId", request.vendedorId().toString());
+    }
     return cd;
+  }
+
+  private void aplicarVendedor(Comprobante c, UUID empresaId, FacturaRequest request) {
+    if (request.vendedorId() == null) {
+      c.setVendedor(null);
+      return;
+    }
+    Vendedor v =
+        vendedorRepository
+            .findByIdAndEmpresa_Id(request.vendedorId(), empresaId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vendedor no encontrado"));
+    c.setVendedor(v);
   }
 
   private static String secuencialProvisional(UUID id) {

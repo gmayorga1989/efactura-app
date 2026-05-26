@@ -1,6 +1,7 @@
 package ec.tusaas.efactura.config;
 
 import ec.tusaas.efactura.config.props.BootstrapProperties;
+import ec.tusaas.efactura.config.props.CloudDriveProperties;
 import ec.tusaas.efactura.config.props.InvitacionProperties;
 import ec.tusaas.efactura.config.props.JwtProperties;
 import ec.tusaas.efactura.config.props.NotificationProperties;
@@ -20,6 +21,7 @@ import org.springframework.context.annotation.Configuration;
   InvitacionProperties.class,
   NotificationProperties.class,
   SuiteIdentityProperties.class,
-  SriDownloadIntegrationProperties.class
+  SriDownloadIntegrationProperties.class,
+  CloudDriveProperties.class
 })
 public class EfacturaPropertiesConfig {}

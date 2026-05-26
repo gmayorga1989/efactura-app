@@ -22,6 +22,7 @@ public record FacturaRequest(
     @NotEmpty List<@Valid FacturaItemRequest> items,
     List<@Valid PagoRequest> pagos,
     Map<String, Object> customData,
+    UUID vendedorId,
     List<@Email String> notificarEmails) {
 
   public LocalDate fechaEmisionOrToday() {

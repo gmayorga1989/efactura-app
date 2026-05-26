@@ -27,6 +27,7 @@ import ec.tusaas.efactura.repository.CotizacionRepository;
 import ec.tusaas.efactura.repository.EmpresaRepository;
 import ec.tusaas.efactura.repository.VendedorRepository;
 import ec.tusaas.efactura.security.UsuarioPrincipal;
+import ec.tusaas.efactura.storage.ObjectStorageService;
 import jakarta.persistence.criteria.Predicate;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -44,6 +45,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -59,6 +61,8 @@ public class CotizacionService {
   private final ComprobanteRepository comprobanteRepository;
   private final FacturaElectronicaService facturaElectronicaService;
   private final EmailNotificationService emailNotificationService;
+  private final CotizacionAdjuntoStorageService cotizacionAdjuntoStorageService;
+  private final ObjectStorageService objectStorageService;
 
   @Transactional(readOnly = true)
   public Page<CotizacionResponse> listar(
@@ -139,6 +143,44 @@ public class CotizacionService {
     return plantillaEmpresa(empresaId);
   }
 
+  @Transactional(readOnly = true)
+  public String previewPlantillaEmpresaHtml(UUID empresaId, Map<String, Object> plantilla) {
+    Empresa empresa = loadEmpresa(empresaId);
+    Map<String, Object> merged =
+        CotizacionPlantillaUtil.merge(plantillaEmpresa(empresaId), plantilla != null ? plantilla : Map.of());
+    return CotizacionHtmlRenderer.renderDemo(empresa, merged);
+  }
+
+  @Transactional
+  public Map<String, Object> subirBannerPlantillaEmpresa(
+      UUID empresaId, MultipartFile archivo, UsuarioPrincipal principal) throws Exception {
+    if (archivo == null || archivo.isEmpty()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Imagen vacía");
+    }
+    if (archivo.getSize() > 3 * 1024 * 1024) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Banner máximo 3 MB");
+    }
+    String ct = archivo.getContentType();
+    if (ct == null || !(ct.startsWith("image/"))) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Solo imágenes para banner");
+    }
+    Empresa e = loadEmpresa(empresaId);
+    String key = "cotizaciones/" + empresaId + "/banner-" + UUID.randomUUID() + ".img";
+    objectStorageService.guardarPublico(key, archivo.getBytes(), ct);
+    String url = objectStorageService.publicUrl(key);
+    Map<String, Object> plantilla = plantillaEmpresa(empresaId);
+    plantilla.put("bannerImageUrl", url);
+    plantilla.put("bannerStorageKey", key);
+    guardarPlantillaEmpresa(empresaId, plantilla, principal);
+    return Map.of("bannerImageUrl", url);
+  }
+
+  @Transactional
+  public CotizacionAdjuntoResponse subirAdjuntoArchivo(
+      UUID empresaId, UUID cotizacionId, MultipartFile archivo, UsuarioPrincipal principal) throws Exception {
+    return cotizacionAdjuntoStorageService.subirArchivo(empresaId, cotizacionId, archivo, principal);
+  }
+
   @Transactional
   public CotizacionResponse crear(UUID empresaId, CotizacionRequest body, UsuarioPrincipal principal) {
     return persistir(empresaId, null, body, principal);
@@ -205,6 +247,7 @@ public class CotizacionService {
             items,
             List.of(),
             custom,
+            c.getVendedor() != null ? c.getVendedor().getId() : null,
             c.getEmailReceptor() != null ? List.of(c.getEmailReceptor()) : List.of());
     ComprobanteResponse resp = facturaElectronicaService.guardarBorrador(empresaId, factura, principal);
     var comprobante =
@@ -448,7 +491,7 @@ public class CotizacionService {
         cotizacionDetalleRepository.findByCotizacion_IdOrderByLineaAsc(id).stream().map(this::toItem).toList();
     List<CotizacionAdjuntoResponse> adj =
         cotizacionAdjuntoRepository.findByCotizacion_IdAndEstadoOrderByOrdenAsc(id, "ACTIVO").stream()
-            .map(a -> new CotizacionAdjuntoResponse(a.getId(), a.getProveedor(), a.getTitulo(), a.getUrl(), a.getOrden()))
+            .map(CotizacionAdjuntoStorageService::toResponse)
             .toList();
     CotizacionResponse base = toResponseResumen(c);
     return new CotizacionResponse(

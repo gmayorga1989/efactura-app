@@ -1,5 +1,6 @@
 package ec.tusaas.efactura.web;
 
+import ec.tusaas.efactura.dto.cotizacion.CotizacionAdjuntoResponse;
 import ec.tusaas.efactura.dto.cotizacion.CotizacionConvertirRequest;
 import ec.tusaas.efactura.dto.cotizacion.CotizacionEnviarCorreoRequest;
 import ec.tusaas.efactura.dto.cotizacion.CotizacionRequest;
@@ -28,7 +29,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/web/v1/ventas/cotizaciones")
@@ -64,6 +67,37 @@ public class CotizacionController {
       @RequestParam(required = false) UUID empresaId, @AuthenticationPrincipal UsuarioPrincipal principal) {
     UUID eid = empresaContextoResolver.resolverEmpresaId(principal, empresaId);
     return cotizacionService.plantillaEmpresa(eid);
+  }
+
+  @PostMapping(value = "/plantilla-empresa/vista-previa", produces = MediaType.TEXT_HTML_VALUE)
+  @PreAuthorize(VENTAS)
+  public ResponseEntity<String> previewPlantillaEmpresa(
+      @RequestParam(required = false) UUID empresaId,
+      @RequestBody(required = false) Map<String, Object> plantilla,
+      @AuthenticationPrincipal UsuarioPrincipal principal) {
+    UUID eid = empresaContextoResolver.resolverEmpresaId(principal, empresaId);
+    return ResponseEntity.ok(cotizacionService.previewPlantillaEmpresaHtml(eid, plantilla));
+  }
+
+  @PostMapping("/plantilla-empresa/banner")
+  @PreAuthorize(VENTAS)
+  public Map<String, Object> subirBannerPlantilla(
+      @RequestParam(required = false) UUID empresaId,
+      @RequestPart("archivo") MultipartFile archivo,
+      @AuthenticationPrincipal UsuarioPrincipal principal) throws Exception {
+    UUID eid = empresaContextoResolver.resolverEmpresaId(principal, empresaId);
+    return cotizacionService.subirBannerPlantillaEmpresa(eid, archivo, principal);
+  }
+
+  @PostMapping("/{id}/adjuntos/archivo")
+  @PreAuthorize(VENTAS)
+  public CotizacionAdjuntoResponse subirAdjuntoArchivo(
+      @RequestParam(required = false) UUID empresaId,
+      @PathVariable UUID id,
+      @RequestPart("archivo") MultipartFile archivo,
+      @AuthenticationPrincipal UsuarioPrincipal principal) throws Exception {
+    UUID eid = empresaContextoResolver.resolverEmpresaId(principal, empresaId);
+    return cotizacionService.subirAdjuntoArchivo(eid, id, archivo, principal);
   }
 
   @PutMapping("/plantilla-empresa")

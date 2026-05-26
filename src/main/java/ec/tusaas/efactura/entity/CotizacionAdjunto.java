@@ -41,8 +41,20 @@ public class CotizacionAdjunto {
   @Column(length = 200)
   private String titulo;
 
-  @Column(nullable = false, length = 2000)
+  @Column(length = 2000)
   private String url;
+
+  @Column(name = "storage_key", length = 500)
+  private String storageKey;
+
+  @Column(name = "content_type", length = 120)
+  private String contentType;
+
+  @Column(name = "tamano_bytes")
+  private Long tamanoBytes;
+
+  @Column(name = "nombre_archivo", length = 255)
+  private String nombreArchivo;
 
   @Column(nullable = false)
   private int orden;

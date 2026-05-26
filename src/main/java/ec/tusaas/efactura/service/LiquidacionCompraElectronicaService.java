@@ -206,6 +206,7 @@ public class LiquidacionCompraElectronicaService {
         items,
         null,
         cd,
+        null,
         null);
   }
 
@@ -258,6 +259,7 @@ public class LiquidacionCompraElectronicaService {
         items,
         null,
         cd,
+        null,
         null);
   }
 

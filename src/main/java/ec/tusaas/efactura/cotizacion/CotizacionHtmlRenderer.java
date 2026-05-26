@@ -6,6 +6,7 @@ import ec.tusaas.efactura.entity.CotizacionDetalle;
 import ec.tusaas.efactura.entity.Empresa;
 import ec.tusaas.efactura.entity.Vendedor;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
@@ -29,26 +30,56 @@ public final class CotizacionHtmlRenderer {
     String texto = CotizacionPlantillaUtil.str(plantilla, "colorTexto", "#0f172a");
     String pie = CotizacionPlantillaUtil.str(plantilla, "textoPie", "Gracias por su preferencia.");
     boolean mostrarVendedor = CotizacionPlantillaUtil.bool(plantilla, "mostrarVendedor", true);
+    String font = CotizacionPlantillaUtil.str(plantilla, "fontFamily", "Inter, Segoe UI, sans-serif");
+    boolean bordes = CotizacionPlantillaUtil.bool(plantilla, "mostrarBordes", true);
+    String diseno = CotizacionPlantillaUtil.str(plantilla, "disenoBase", "moderno");
+    String banner = CotizacionPlantillaUtil.str(plantilla, "bannerImageUrl", "");
 
     StringBuilder sb = new StringBuilder();
-    sb.append("<!DOCTYPE html><html><head><meta charset=\"UTF-8\"/></head><body style=\"margin:0;padding:24px;background:#f1f5f9;font-family:Inter,Segoe UI,sans-serif;color:")
+    sb.append("<!DOCTYPE html><html><head><meta charset=\"UTF-8\"/></head><body style=\"margin:0;padding:24px;background:#f1f5f9;font-family:")
+        .append(font)
+        .append(";color:")
         .append(texto)
         .append(";\">");
     sb.append("<div style=\"max-width:720px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 12px 40px rgba(15,23,42,.12);\">");
-    sb.append("<div style=\"padding:28px 32px;background:linear-gradient(135deg,")
-        .append(primario)
-        .append(",")
-        .append(acento)
-        .append(");color:#fff;\">");
-    sb.append("<div style=\"font-size:12px;opacity:.9;letter-spacing:.08em;text-transform:uppercase;\">Cotización / Proforma</div>");
-    sb.append("<h1 style=\"margin:8px 0 0;font-size:26px;font-weight:800;\">")
-        .append(escape(empresa.getNombreComercial() != null ? empresa.getNombreComercial() : empresa.getRazonSocial()))
-        .append("</h1>");
-    sb.append("<div style=\"margin-top:12px;font-size:15px;\">Nº <strong>")
-        .append(escape(cotizacion.getNumero()))
-        .append("</strong> · ")
-        .append(cotizacion.getFechaEmision().format(FECHA))
-        .append("</div></div>");
+    if (!banner.isBlank()) {
+      sb.append("<div style=\"height:120px;background:url('")
+          .append(escapeAttr(banner))
+          .append("') center/cover no-repeat;\"></div>");
+    }
+    if ("ejecutivo".equalsIgnoreCase(diseno)) {
+      sb.append("<div style=\"padding:32px 32px 24px;text-align:center;border-bottom:3px solid ")
+          .append(acento)
+          .append(";\">");
+      sb.append("<div style=\"font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:")
+          .append(primario)
+          .append(";\">Cotización</div>");
+      sb.append("<h1 style=\"margin:10px 0 0;font-size:28px;font-weight:300;color:")
+          .append(texto)
+          .append(";\">")
+          .append(escape(empresa.getNombreComercial() != null ? empresa.getNombreComercial() : empresa.getRazonSocial()))
+          .append("</h1>");
+      sb.append("<div style=\"margin-top:10px;font-size:14px;color:#64748b;\">Nº <strong>")
+          .append(escape(cotizacion.getNumero()))
+          .append("</strong> · ")
+          .append(cotizacion.getFechaEmision().format(FECHA))
+          .append("</div></div>");
+    } else {
+      sb.append("<div style=\"padding:28px 32px;background:linear-gradient(135deg,")
+          .append(primario)
+          .append(",")
+          .append(acento)
+          .append(");color:#fff;\">");
+      sb.append("<div style=\"font-size:12px;opacity:.9;letter-spacing:.08em;text-transform:uppercase;\">Cotización / Proforma</div>");
+      sb.append("<h1 style=\"margin:8px 0 0;font-size:26px;font-weight:800;\">")
+          .append(escape(empresa.getNombreComercial() != null ? empresa.getNombreComercial() : empresa.getRazonSocial()))
+          .append("</h1>");
+      sb.append("<div style=\"margin-top:12px;font-size:15px;\">Nº <strong>")
+          .append(escape(cotizacion.getNumero()))
+          .append("</strong> · ")
+          .append(cotizacion.getFechaEmision().format(FECHA))
+          .append("</div></div>");
+    }
 
     sb.append("<div style=\"padding:24px 32px;\">");
     if (cotizacion.getIntroduccionHtml() != null && !cotizacion.getIntroduccionHtml().isBlank()) {
@@ -81,7 +112,10 @@ public final class CotizacionHtmlRenderer {
         .append(cotizacion.getFechaEmision().plusDays(cotizacion.getValidezDias()).format(FECHA))
         .append("</div></td></tr></table>");
 
-    sb.append("<table style=\"width:100%;border-collapse:collapse;font-size:13px;\">");
+    String tableBorder = bordes ? "border:1px solid #e2e8f0;" : "border:none;";
+    sb.append("<table style=\"width:100%;border-collapse:collapse;font-size:13px;")
+        .append(tableBorder)
+        .append("\">");
     sb.append("<thead><tr style=\"background:")
         .append(primario)
         .append(";color:#fff;\">");
@@ -172,5 +206,28 @@ public final class CotizacionHtmlRenderer {
 
   private static String escapeAttr(String s) {
     return escape(s);
+  }
+
+  /** Vista previa del diseño por empresa (datos de ejemplo). */
+  public static String renderDemo(Empresa empresa, Map<String, Object> plantillaJson) {
+    Cotizacion c = new Cotizacion();
+    c.setNumero("COT-PREVIEW");
+    c.setFechaEmision(LocalDate.now());
+    c.setValidezDias(15);
+    c.setRazonSocialReceptor("Cliente de ejemplo S.A.");
+    c.setIdentificacionReceptor("0999999999001");
+    c.setEmailReceptor("cliente@ejemplo.com");
+    c.setSubtotalSinImpuestos(new BigDecimal("1000.00"));
+    c.setIvaTotal(new BigDecimal("150.00"));
+    c.setValorTotal(new BigDecimal("1150.00"));
+    c.setIntroduccionHtml("<p>Estimado cliente, presentamos nuestra propuesta comercial.</p>");
+    c.setCondicionesHtml("<p>Validez 15 días. Precios no incluyen instalación.</p>");
+    c.setPlantillaJson(plantillaJson);
+    CotizacionDetalle d = new CotizacionDetalle();
+    d.setDescripcion("Servicio profesional de consultoría");
+    d.setCantidad(new BigDecimal("1"));
+    d.setPrecioUnitario(new BigDecimal("1000"));
+    d.setPrecioTotalSinImpuesto(new BigDecimal("1000"));
+    return render(empresa, c, List.of(d), List.of(), null);
   }
 }

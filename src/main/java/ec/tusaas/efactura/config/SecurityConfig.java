@@ -68,6 +68,11 @@ public class SecurityConfig {
                         "/api/web/v1/auth/password-reset/confirm",
                         "/api/web/v1/auth/suite/exchange")
                     .permitAll()
+                    .requestMatchers(
+                        HttpMethod.GET,
+                        "/api/web/v1/integraciones/cloud/google/callback",
+                        "/api/web/v1/integraciones/cloud/microsoft/callback")
+                    .permitAll()
                     .requestMatchers("/api/web/v1/**")
                     .authenticated()
                     .requestMatchers("/api/public/v1/**")
