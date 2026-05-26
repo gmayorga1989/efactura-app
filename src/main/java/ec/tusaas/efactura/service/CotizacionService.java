@@ -181,6 +181,11 @@ public class CotizacionService {
     return cotizacionAdjuntoStorageService.subirArchivo(empresaId, cotizacionId, archivo, principal);
   }
 
+  public void eliminarAdjunto(UUID empresaId, UUID cotizacionId, UUID adjuntoId, UsuarioPrincipal principal)
+      throws Exception {
+    cotizacionAdjuntoStorageService.eliminarAdjunto(empresaId, cotizacionId, adjuntoId, principal);
+  }
+
   @Transactional
   public CotizacionResponse crear(UUID empresaId, CotizacionRequest body, UsuarioPrincipal principal) {
     return persistir(empresaId, null, body, principal);

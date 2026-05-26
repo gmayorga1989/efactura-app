@@ -24,6 +24,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -98,6 +99,18 @@ public class CotizacionController {
       @AuthenticationPrincipal UsuarioPrincipal principal) throws Exception {
     UUID eid = empresaContextoResolver.resolverEmpresaId(principal, empresaId);
     return cotizacionService.subirAdjuntoArchivo(eid, id, archivo, principal);
+  }
+
+  @DeleteMapping("/{id}/adjuntos/{adjuntoId}")
+  @PreAuthorize(VENTAS)
+  public void eliminarAdjunto(
+      @RequestParam(required = false) UUID empresaId,
+      @PathVariable UUID id,
+      @PathVariable UUID adjuntoId,
+      @AuthenticationPrincipal UsuarioPrincipal principal)
+      throws Exception {
+    UUID eid = empresaContextoResolver.resolverEmpresaId(principal, empresaId);
+    cotizacionService.eliminarAdjunto(eid, id, adjuntoId, principal);
   }
 
   @PutMapping("/plantilla-empresa")

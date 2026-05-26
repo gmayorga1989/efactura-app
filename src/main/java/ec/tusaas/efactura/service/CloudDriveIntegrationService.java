@@ -149,6 +149,23 @@ public class CloudDriveIntegrationService {
     return String.valueOf(google.get("accessToken"));
   }
 
+  @Transactional(readOnly = true)
+  public String microsoftAccessToken(UUID empresaId) {
+    Map<String, Object> ms = microsoftTokens(empresaId);
+    if (ms == null || ms.get("accessToken") == null) {
+      throw new ResponseStatusException(HttpStatus.PRECONDITION_FAILED, "Microsoft no conectado");
+    }
+    Instant exp = parseInstant(ms.get("expiresAt"));
+    if (exp != null && exp.isBefore(Instant.now().plusSeconds(60))) {
+      refreshMicrosoft(empresaId, ms);
+      ms = microsoftTokens(empresaId);
+    }
+    if (ms == null || ms.get("accessToken") == null) {
+      throw new ResponseStatusException(HttpStatus.PRECONDITION_FAILED, "Microsoft no conectado");
+    }
+    return String.valueOf(ms.get("accessToken"));
+  }
+
   private void refreshGoogle(UUID empresaId, Map<String, Object> google) {
     String refresh = String.valueOf(google.get("refreshToken"));
     if (refresh == null || refresh.isBlank() || "null".equals(refresh)) {
@@ -175,6 +192,35 @@ public class CloudDriveIntegrationService {
       token.put("refresh_token", refresh);
     }
     guardarGoogleTokens(empresaId, token);
+  }
+
+  private void refreshMicrosoft(UUID empresaId, Map<String, Object> ms) {
+    String refresh = String.valueOf(ms.get("refreshToken"));
+    if (refresh == null || refresh.isBlank() || "null".equals(refresh)) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Reconecte Microsoft");
+    }
+    MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+    form.add("client_id", properties.microsoftClientId());
+    form.add("client_secret", properties.microsoftClientSecret());
+    form.add("refresh_token", refresh);
+    form.add("grant_type", "refresh_token");
+    String tenant = properties.microsoftTenant() == null ? "common" : properties.microsoftTenant();
+    @SuppressWarnings("unchecked")
+    Map<String, Object> token =
+        restClient
+            .post()
+            .uri("https://login.microsoftonline.com/" + tenant + "/oauth2/v2.0/token")
+            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+            .body(form)
+            .retrieve()
+            .body(Map.class);
+    if (token == null) {
+      throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "No se pudo renovar token Microsoft");
+    }
+    if (token.get("refresh_token") == null) {
+      token.put("refresh_token", refresh);
+    }
+    guardarMicrosoftTokens(empresaId, token);
   }
 
   private void guardarGoogleTokens(UUID empresaId, Map<String, Object> token) {
@@ -248,6 +294,20 @@ public class CloudDriveIntegrationService {
     }
     Object ms = c.get("microsoft");
     return ms instanceof Map<?, ?> m && m.get("accessToken") != null;
+  }
+
+  @SuppressWarnings("unchecked")
+  private Map<String, Object> microsoftTokens(UUID empresaId) {
+    Empresa e = empresaRepository.findById(empresaId).orElse(null);
+    if (e == null || e.getConfigExtra() == null) {
+      return null;
+    }
+    Object cloud = e.getConfigExtra().get(CONFIG_KEY);
+    if (!(cloud instanceof Map<?, ?> c)) {
+      return null;
+    }
+    Object ms = c.get("microsoft");
+    return ms instanceof Map<?, ?> m ? (Map<String, Object>) m : null;
   }
 
   private static Instant parseInstant(Object raw) {

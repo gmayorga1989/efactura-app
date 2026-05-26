@@ -14,9 +14,9 @@ spring:
   config.activate.on-profile: local | prod
   datasource:
     # Sufijo opcional, p. ej. DigitalOcean: DB_URL_SUFFIX=?sslmode=require
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:efactura}${DB_URL_SUFFIX:}}
+    username: ${SPRING_DATASOURCE_USERNAME:${DB_USER:efactura}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:efactura_dev}}
     driver-class-name: org.postgresql.Driver
     hikari:
       pool-name: efactura-app
@@ -89,7 +89,7 @@ efactura:
       google-client-id: ${GOOGLE_DRIVE_CLIENT_ID:}
       google-client-secret: ${GOOGLE_DRIVE_CLIENT_SECRET:}
       google-redirect-uri: ${GOOGLE_DRIVE_REDIRECT_URI:http://localhost:8080/api/web/v1/integraciones/cloud/google/callback}
-      google-api-key: ${GOOGLE_PICKER_API_KEY:}
+      google-api-key: ${GOOGLE_DRIVE_API_KEY:}
       microsoft-client-id: ${MICROSOFT_DRIVE_CLIENT_ID:}
       microsoft-client-secret: ${MICROSOFT_DRIVE_CLIENT_SECRET:}
       microsoft-redirect-uri: ${MICROSOFT_DRIVE_REDIRECT_URI:http://localhost:8080/api/web/v1/integraciones/cloud/microsoft/callback}

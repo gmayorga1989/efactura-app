@@ -63,4 +63,15 @@ public class LocalObjectStorageService implements ObjectStorageService {
   private Path root() {
     return Path.of(storageProperties.getObjectRoot()).toAbsolutePath().normalize();
   }
+
+  @Override
+  public void eliminar(String storageKey) throws IOException {
+    Path root = root();
+    Path file = root.resolve(storageKey).normalize();
+    if (!file.startsWith(root)) {
+      throw new IllegalArgumentException("Ruta invalida");
+    }
+    boolean deleted = Files.deleteIfExists(file);
+    log.info("Storage local: eliminado key={} path={} deleted={}", storageKey, file, deleted);
+  }
 }

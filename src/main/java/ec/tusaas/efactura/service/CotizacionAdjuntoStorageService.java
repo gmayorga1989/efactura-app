@@ -4,8 +4,8 @@ import ec.tusaas.efactura.dto.cotizacion.CotizacionAdjuntoResponse;
 import ec.tusaas.efactura.entity.Cotizacion;
 import ec.tusaas.efactura.entity.CotizacionAdjunto;
 import ec.tusaas.efactura.entity.Empresa;
-import ec.tusaas.efactura.repository.CotizacionAdjuntoRepository;
 import ec.tusaas.efactura.repository.CotizacionRepository;
+import ec.tusaas.efactura.repository.CotizacionAdjuntoRepository;
 import ec.tusaas.efactura.security.UsuarioPrincipal;
 import ec.tusaas.efactura.storage.ObjectStorageService;
 import java.util.Set;
@@ -76,6 +76,33 @@ public class CotizacionAdjuntoStorageService {
     adj.setOrden(orden);
     adj = cotizacionAdjuntoRepository.save(adj);
     return toResponse(adj);
+  }
+
+  @Transactional
+  public void eliminarAdjunto(UUID empresaId, UUID cotizacionId, UUID adjuntoId, UsuarioPrincipal principal)
+      throws Exception {
+    Cotizacion cotizacion =
+        cotizacionRepository
+            .findByIdAndEmpresa_Id(cotizacionId, empresaId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cotización no encontrada"));
+    if ("CONVERTIDA".equalsIgnoreCase(cotizacion.getEstado())) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Cotización convertida; no se pueden eliminar adjuntos");
+    }
+    CotizacionAdjunto adj =
+        cotizacionAdjuntoRepository
+            .findById(adjuntoId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Adjunto no encontrado"));
+    if (adj.getCotizacion() == null
+        || !cotizacionId.equals(adj.getCotizacion().getId())
+        || adj.getEmpresa() == null
+        || !empresaId.equals(adj.getEmpresa().getId())) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Adjunto no encontrado");
+    }
+
+    if (adj.getStorageKey() != null && !adj.getStorageKey().isBlank()) {
+      objectStorageService.eliminar(adj.getStorageKey());
+    }
+    cotizacionAdjuntoRepository.delete(adj);
   }
 
   private static void validarArchivo(MultipartFile archivo) {

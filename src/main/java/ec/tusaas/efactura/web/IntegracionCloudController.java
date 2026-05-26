@@ -62,6 +62,14 @@ public class IntegracionCloudController {
     return Map.of("url", cloudDriveIntegrationService.microsoftAuthUrl(eid));
   }
 
+  @GetMapping("/microsoft/access-token")
+  @PreAuthorize(VENTAS)
+  public Map<String, String> microsoftAccessToken(
+      @RequestParam(required = false) UUID empresaId, @AuthenticationPrincipal UsuarioPrincipal principal) {
+    UUID eid = empresaContextoResolver.resolverEmpresaId(principal, empresaId);
+    return Map.of("accessToken", cloudDriveIntegrationService.microsoftAccessToken(eid));
+  }
+
   @GetMapping(value = "/microsoft/callback", produces = MediaType.TEXT_HTML_VALUE)
   public String microsoftCallback(@RequestParam String code, @RequestParam String state) {
     return cloudDriveIntegrationService.microsoftCallback(code, state);

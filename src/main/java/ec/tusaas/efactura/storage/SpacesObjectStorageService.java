@@ -11,6 +11,7 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -136,5 +137,24 @@ public class SpacesObjectStorageService implements ObjectStorageService {
 
   private static boolean blank(String value) {
     return value == null || value.isBlank();
+  }
+
+  @Override
+  public void eliminar(String storageKey) throws IOException {
+    try {
+      s3Client.deleteObject(
+          DeleteObjectRequest.builder().bucket(storageProperties.getBucket()).key(storageKey).build());
+      log.info("Storage Spaces: eliminado bucket={} key={}", storageProperties.getBucket(), storageKey);
+    } catch (S3Exception e) {
+      log.error(
+          "Storage Spaces: error eliminando objeto bucket={} key={} status={} code={} message={}",
+          storageProperties.getBucket(),
+          storageKey,
+          e.statusCode(),
+          e.awsErrorDetails() == null ? null : e.awsErrorDetails().errorCode(),
+          e.awsErrorDetails() == null ? e.getMessage() : e.awsErrorDetails().errorMessage(),
+          e);
+      throw e;
+    }
   }
 }

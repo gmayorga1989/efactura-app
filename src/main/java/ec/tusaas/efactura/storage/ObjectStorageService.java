@@ -13,4 +13,8 @@ public interface ObjectStorageService {
   byte[] leer(String storageKey) throws IOException;
 
   String publicUrl(String storageKey);
+
+  default void eliminar(String storageKey) throws IOException {
+    // opcional según proveedor; implementaciones pueden sobrescribir
+  }
 }
