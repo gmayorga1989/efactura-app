@@ -1,0 +1,17 @@
+# Copiar a application-local.yml (gitignore) cuando desarrolles el front en localhost
+# pero el login Suite use Identity en el Droplet (159.89.41.88:8092).
+#
+# mvn spring-boot:run  →  carga perfil local + application-local.yml
+#
+# El JWT del callback trae iss=http://159.89.41.88:8092; efactura-app local debe usar
+# el MISMO issuer y SUITE_JWT_SECRET que identity-gateway en producción.
+
+efactura:
+  suite:
+    identity:
+      enabled: true
+      issuer: http://159.89.41.88:8092
+      identity-base-url: http://159.89.41.88:8092
+      # Pegar el mismo valor que SUITE_JWT_SECRET en /opt/identity-gateway/.env
+      secret: CAMBIAR-MISMO-SECRETO-QUE-IDENTITY-GATEWAY-PROD
+      company-slug: suite-demo

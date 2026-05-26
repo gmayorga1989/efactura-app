@@ -59,6 +59,10 @@ public class Comprobante {
   @JoinColumn(name = "cliente_id")
   private Cliente cliente;
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "vendedor_id")
+  private Vendedor vendedor;
+
   @Column(name = "razon_social_receptor", length = 300)
   private String razonSocialReceptor;
 
