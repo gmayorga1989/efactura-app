@@ -7,6 +7,7 @@ import ec.tusaas.efactura.entity.Comprobante;
 import ec.tusaas.efactura.entity.ComprobanteDetalle;
 import ec.tusaas.efactura.entity.Empresa;
 import ec.tusaas.efactura.entity.PuntoEmision;
+import ec.tusaas.efactura.util.ComprobanteVendedorMapper;
 import ec.tusaas.efactura.repository.ComprobanteDetalleRepository;
 import ec.tusaas.efactura.repository.ComprobanteRepository;
 import ec.tusaas.efactura.repository.PuntoEmisionRepository;
@@ -81,6 +82,8 @@ public class DocumentoEmisionSupport {
         c.getNumeroAutorizacion(),
         c.getFechaAutorizacion(),
         null,
+        ComprobanteVendedorMapper.vendedorId(c),
+        ComprobanteVendedorMapper.vendedorNombre(c),
         c.getCustomData(),
         detalles);
   }

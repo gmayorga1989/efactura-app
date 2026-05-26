@@ -10,4 +10,6 @@ public interface CotizacionAdjuntoRepository extends JpaRepository<CotizacionAdj
   List<CotizacionAdjunto> findByCotizacion_IdAndEstadoOrderByOrdenAsc(UUID cotizacionId, String estado);
 
   void deleteByCotizacion_Id(UUID cotizacionId);
+
+  void deleteByCotizacion_IdAndTipo(UUID cotizacionId, String tipo);
 }

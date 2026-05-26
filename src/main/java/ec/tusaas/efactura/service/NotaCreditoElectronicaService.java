@@ -11,6 +11,7 @@ import ec.tusaas.efactura.emision.DocumentoModificadoRideUtil;
 import ec.tusaas.efactura.emision.XmlNotaCreditoGeneratorService;
 import ec.tusaas.efactura.emision.XmlNotaCreditoGeneratorService.DocumentoModificado;
 import ec.tusaas.efactura.entity.Certificado;
+import ec.tusaas.efactura.util.ComprobanteVendedorMapper;
 import ec.tusaas.efactura.entity.Comprobante;
 import ec.tusaas.efactura.entity.ComprobanteArchivo;
 import ec.tusaas.efactura.entity.ComprobanteDetalle;
@@ -617,6 +618,8 @@ public class NotaCreditoElectronicaService {
         c.getNumeroAutorizacion(),
         c.getFechaAutorizacion(),
         null,
+        ComprobanteVendedorMapper.vendedorId(c),
+        ComprobanteVendedorMapper.vendedorNombre(c),
         c.getCustomData(),
         detalles);
   }

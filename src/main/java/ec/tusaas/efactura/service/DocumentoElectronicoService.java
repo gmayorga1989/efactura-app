@@ -10,6 +10,7 @@ import ec.tusaas.efactura.repository.PuntoEmisionRepository;
 import ec.tusaas.efactura.security.UsuarioPrincipal;
 import ec.tusaas.efactura.sri.ClaveAccesoGenerator;
 import ec.tusaas.efactura.tributario.TiposComprobanteSri;
+import ec.tusaas.efactura.util.ComprobanteVendedorMapper;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -120,6 +121,8 @@ public class DocumentoElectronicoService {
         c.getNumeroAutorizacion(),
         c.getFechaAutorizacion(),
         null,
+        ComprobanteVendedorMapper.vendedorId(c),
+        ComprobanteVendedorMapper.vendedorNombre(c),
         c.getCustomData(),
         List.of());
   }

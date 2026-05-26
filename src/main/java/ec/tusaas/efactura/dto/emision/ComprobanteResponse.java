@@ -26,5 +26,7 @@ public record ComprobanteResponse(
     Instant fechaAutorizacion,
     /** Último mensaje del SRI (recepción/autorización), útil en pendiente o error. */
     String ultimoMensajeSri,
+    UUID vendedorId,
+    String vendedorNombre,
     Map<String, Object> customData,
     List<ComprobanteDetalleResponse> detalles) {}

@@ -2,6 +2,7 @@ package ec.tusaas.efactura.service;
 
 import ec.tusaas.efactura.dto.comprobante.ComprobanteMonitorResponse;
 import ec.tusaas.efactura.entity.Comprobante;
+import ec.tusaas.efactura.util.ComprobanteVendedorMapper;
 import ec.tusaas.efactura.entity.ComprobanteLogSri;
 import ec.tusaas.efactura.repository.ComprobanteLogSriRepository;
 import ec.tusaas.efactura.repository.ComprobanteRepository;
@@ -135,7 +136,8 @@ public class ComprobanteMonitorService {
         c.getFechaAutorizacion(),
         ultimoMensajeSri(c.getId()),
         ComprobanteNotificacionService.resolverEmailReceptor(c),
-        estadoEnvioCorreo(c.getId()));
+        estadoEnvioCorreo(c.getId()),
+        ComprobanteVendedorMapper.vendedorNombre(c));
   }
 
   private String estadoEnvioCorreo(UUID comprobanteId) {

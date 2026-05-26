@@ -174,6 +174,26 @@ public class CotizacionController {
     cotizacionService.anular(eid, id, principal);
   }
 
+  @PostMapping("/{id}/aceptar")
+  @PreAuthorize(VENTAS)
+  public CotizacionResponse aceptar(
+      @RequestParam(required = false) UUID empresaId,
+      @PathVariable UUID id,
+      @AuthenticationPrincipal UsuarioPrincipal principal) {
+    UUID eid = empresaContextoResolver.resolverEmpresaId(principal, empresaId);
+    return cotizacionService.aceptar(eid, id, principal);
+  }
+
+  @PostMapping("/{id}/rechazar")
+  @PreAuthorize(VENTAS)
+  public CotizacionResponse rechazar(
+      @RequestParam(required = false) UUID empresaId,
+      @PathVariable UUID id,
+      @AuthenticationPrincipal UsuarioPrincipal principal) {
+    UUID eid = empresaContextoResolver.resolverEmpresaId(principal, empresaId);
+    return cotizacionService.rechazar(eid, id, principal);
+  }
+
   @PostMapping("/{id}/convertir-factura")
   @PreAuthorize(VENTAS)
   public ComprobanteResponse convertir(

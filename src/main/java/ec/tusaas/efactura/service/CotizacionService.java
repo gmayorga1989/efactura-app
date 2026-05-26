@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -210,6 +211,39 @@ public class CotizacionService {
   }
 
   @Transactional
+  public CotizacionResponse aceptar(UUID empresaId, UUID id, UsuarioPrincipal principal) {
+    Cotizacion c = load(empresaId, id);
+    validarEstadoComercial(c, Set.of("BORRADOR", "ENVIADA"));
+    c.setEstado("ACEPTADA");
+    c.setUsuarioModificacion(principal.getEmail());
+    c.setFechaModificacion(Instant.now());
+    cotizacionRepository.save(c);
+    return toResponseCompleto(c);
+  }
+
+  @Transactional
+  public CotizacionResponse rechazar(UUID empresaId, UUID id, UsuarioPrincipal principal) {
+    Cotizacion c = load(empresaId, id);
+    validarEstadoComercial(c, Set.of("BORRADOR", "ENVIADA", "ACEPTADA"));
+    c.setEstado("RECHAZADA");
+    c.setUsuarioModificacion(principal.getEmail());
+    c.setFechaModificacion(Instant.now());
+    cotizacionRepository.save(c);
+    return toResponseCompleto(c);
+  }
+
+  private static void validarEstadoComercial(Cotizacion c, Set<String> permitidos) {
+    String estado = c.getEstado() != null ? c.getEstado().toUpperCase() : "";
+    if ("CONVERTIDA".equals(estado) || "ANULADA".equals(estado)) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Estado no permite cambiar la cotización");
+    }
+    if (!permitidos.contains(estado)) {
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT, "No se puede cambiar el estado desde " + c.getEstado());
+    }
+  }
+
+  @Transactional
   public ComprobanteResponse convertirAFactura(
       UUID empresaId, UUID id, CotizacionConvertirRequest body, UsuarioPrincipal principal) {
     Cotizacion c = load(empresaId, id);
@@ -350,7 +384,7 @@ public class CotizacionService {
     c = cotizacionRepository.save(c);
     cotizacionDetalleRepository.deleteByCotizacion_Id(c.getId());
     guardarDetalles(c, empresa, body.items());
-    cotizacionAdjuntoRepository.deleteByCotizacion_Id(c.getId());
+    cotizacionAdjuntoRepository.deleteByCotizacion_IdAndTipo(c.getId(), "ENLACE");
     guardarAdjuntos(c, empresa, body.adjuntos());
     return toResponseCompleto(c);
   }

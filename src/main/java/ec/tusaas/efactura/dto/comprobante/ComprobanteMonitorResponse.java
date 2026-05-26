@@ -24,4 +24,5 @@ public record ComprobanteMonitorResponse(
     Instant fechaAutorizacion,
     String ultimoMensajeSri,
     String emailReceptor,
-    String estadoEnvioCorreo) {}
+    String estadoEnvioCorreo,
+    String vendedorNombre) {}

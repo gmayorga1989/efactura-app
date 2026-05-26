@@ -28,6 +28,7 @@ import ec.tusaas.efactura.entity.Vendedor;
 import ec.tusaas.efactura.repository.PuntoEmisionRepository;
 import ec.tusaas.efactura.repository.VendedorRepository;
 import ec.tusaas.efactura.security.UsuarioPrincipal;
+import ec.tusaas.efactura.util.ComprobanteVendedorMapper;
 import ec.tusaas.efactura.sri.ClaveAccesoGenerator;
 import ec.tusaas.efactura.sri.ComprobanteSriReemisionSupport;
 import ec.tusaas.efactura.sri.client.SriAutorizacionClient;
@@ -459,6 +460,8 @@ public class FacturaElectronicaService {
         c.getNumeroAutorizacion(),
         c.getFechaAutorizacion(),
         ultimoMensajeSri(c.getId()),
+        ComprobanteVendedorMapper.vendedorId(c),
+        ComprobanteVendedorMapper.vendedorNombre(c),
         c.getCustomData(),
         List.of());
   }
@@ -498,6 +501,8 @@ public class FacturaElectronicaService {
         c.getNumeroAutorizacion(),
         c.getFechaAutorizacion(),
         ultimoMensajeSri(c.getId()),
+        ComprobanteVendedorMapper.vendedorId(c),
+        ComprobanteVendedorMapper.vendedorNombre(c),
         c.getCustomData(),
         detalles);
   }
