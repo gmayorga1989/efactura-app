@@ -14,6 +14,7 @@ import ec.tusaas.efactura.repository.ComprobanteDetalleRepository;
 import ec.tusaas.efactura.repository.ComprobanteLogSriRepository;
 import ec.tusaas.efactura.repository.ComprobanteRepository;
 import ec.tusaas.efactura.repository.PuntoEmisionRepository;
+import ec.tusaas.efactura.repository.VendedorRepository;
 import ec.tusaas.efactura.security.UsuarioPrincipal;
 import ec.tusaas.efactura.sri.client.SriAutorizacionClient;
 import ec.tusaas.efactura.sri.client.SriRecepcionClient;
@@ -53,6 +54,7 @@ class FacturaElectronicaServiceAuditoriaTest {
   @Mock private ApiKeyRepository apiKeyRepository;
   @Mock private AuditoriaService auditoriaService;
   @Mock private DashboardCacheService dashboardCacheService;
+  @Mock private VendedorRepository vendedorRepository;
 
   private FacturaElectronicaService service;
 
@@ -78,7 +80,8 @@ class FacturaElectronicaServiceAuditoriaTest {
             comprobanteNotificacionService,
             apiKeyRepository,
             auditoriaService,
-            dashboardCacheService);
+            dashboardCacheService,
+            vendedorRepository);
   }
 
   @Test
