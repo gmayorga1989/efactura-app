@@ -64,6 +64,7 @@ public class VendedorService {
     validarCodigoUnico(empresaId, body.codigo(), null);
     Vendedor v = new Vendedor();
     v.setEmpresa(empresa);
+    v.setCodigoInterno(generarCodigoInterno(empresaId));
     aplicar(v, body);
     v.setUsuarioCreacion(principal.getEmail());
     return toResponse(vendedorRepository.save(v));
@@ -153,8 +154,14 @@ public class VendedorService {
     }
   }
 
+  private String generarCodigoInterno(UUID empresaId) {
+    long siguiente = vendedorRepository.countByEmpresa_Id(empresaId) + 1;
+    return String.format("VEN-%05d", siguiente);
+  }
+
   private void aplicar(Vendedor v, VendedorRequest body) {
-    v.setCodigo(body.codigo() != null ? body.codigo().trim() : null);
+    String codigoAdicional = body.codigo() != null ? body.codigo().trim() : null;
+    v.setCodigo(codigoAdicional != null && !codigoAdicional.isEmpty() ? codigoAdicional : null);
     v.setNombres(body.nombres().trim());
     v.setApellidos(body.apellidos() != null ? body.apellidos().trim() : null);
     v.setEmail(body.email());
@@ -181,6 +188,7 @@ public class VendedorService {
   private VendedorResponse toResponse(Vendedor v) {
     return new VendedorResponse(
         v.getId(),
+        v.getCodigoInterno(),
         v.getCodigo(),
         v.getNombres(),
         v.getApellidos(),

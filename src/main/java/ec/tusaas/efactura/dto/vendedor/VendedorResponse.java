@@ -4,6 +4,7 @@ import java.util.UUID;
 
 public record VendedorResponse(
     UUID id,
+    String codigoInterno,
     String codigo,
     String nombres,
     String apellidos,

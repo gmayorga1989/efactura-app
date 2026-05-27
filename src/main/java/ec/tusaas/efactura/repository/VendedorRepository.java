@@ -21,4 +21,6 @@ public interface VendedorRepository extends JpaRepository<Vendedor, UUID> {
   boolean existsByEmpresa_IdAndCodigoIgnoreCaseAndIdNot(UUID empresaId, String codigo, UUID id);
 
   boolean existsByEmpresa_IdAndCodigoIgnoreCase(UUID empresaId, String codigo);
+
+  long countByEmpresa_Id(UUID empresaId);
 }

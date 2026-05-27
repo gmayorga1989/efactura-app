@@ -28,6 +28,10 @@ public class Vendedor {
   @JoinColumn(name = "empresa_id", nullable = false)
   private Empresa empresa;
 
+  @Column(name = "codigo_interno", nullable = false, length = 30)
+  private String codigoInterno;
+
+  /** Código adicional opcional (referencia interna del cliente). */
   @Column(length = 30)
   private String codigo;
 
