@@ -27,7 +27,7 @@ exec java -jar /app/app.jar
 
 - Perfil `SPRING_PROFILES_ACTIVE=cloud-test` → activa **`prod`** (producción) + pool Hikari reducido para Postgres managed DO
 - Alternativa equivalente: `SPRING_PROFILES_ACTIVE=prod` (sin ajuste Hikari de `cloud-test`)
-- `SPRING_FLYWAY_ENABLED=false` en contenedor (migraciones fuera del deploy o previas)
+- `SPRING_FLYWAY_ENABLED=true` en contenedor: Flyway aplica `db/migration` en cada arranque tras `docker compose up`
 - Volúmenes: certificados, comprobantes, logos bajo `/data`
 
 ## Perfiles Spring (`application.yml`)
@@ -35,7 +35,7 @@ exec java -jar /app/app.jar
 | Perfil | Uso |
 |--------|-----|
 | `local` | `mvn spring-boot:run`, logging DEBUG, bootstrap demo |
-| `prod` | Docker/DO: bootstrap off, SRI pruebas off, CORS/URLs vía env, Swagger UI off, paths `/data`, Flyway off por defecto |
+| `prod` | Docker/DO: bootstrap off, SRI pruebas off, CORS/URLs vía env, Swagger UI off, paths `/data`, Flyway on (vía `SPRING_FLYWAY_ENABLED`) |
 | `cloud-test` | Alias en `.env`: incluye `prod` + Hikari máx. 6 (plan DO pequeño) |
 
 Variables críticas en `.env` del servidor (perfil `cloud-test` → `prod`): `JWT_SECRET`, `EFACTURA_CRYPTO_MASTER`, `SUITE_JWT_SECRET`, `SUITE_IDENTITY_PUBLIC_BASE_URL`, `CORS_ORIGINS`, `APP_BASE_URL`, `EFACTURA_SRI_DOWNLOAD_*`.

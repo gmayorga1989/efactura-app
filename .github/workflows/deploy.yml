@@ -48,6 +48,17 @@ jobs:
     environment: API_EFACTURA_CI_CD
     if: github.ref == 'refs/heads/main'
     steps:
+      - uses: actions/checkout@v4
+
+      - uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EFACTURA_APP_DEPLOY_HOST }}
+          username: ${{ secrets.EFACTURA_APP_DEPLOY_USER }}
+          key: ${{ secrets.EFACTURA_APP_DEPLOY_SSH_KEY }}
+          port: ${{ secrets.EFACTURA_APP_DEPLOY_PORT }}
+          source: docker-compose.prod.yml
+          target: /opt/efactura-app
+
       - uses: appleboy/ssh-action@v1.2.0
         env:
           IMAGE: ${{ env.IMAGE_NAME }}:${{ github.sha }}

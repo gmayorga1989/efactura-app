@@ -21,7 +21,8 @@ services:
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
-      SPRING_FLYWAY_ENABLED: "false"
+      # Migraciones al arrancar (Flyway en classpath). Desactivar solo con migración manual explícita.
+      SPRING_FLYWAY_ENABLED: "true"
       EFACTURA_REDIS_ENABLED: "false"
       EFACTURA_STORAGE_LOCAL: /data/certificados
       EFACTURA_COMPROBANTES_LOCAL: /data/comprobantes

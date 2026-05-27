@@ -208,7 +208,7 @@ spring:
       leak-detection-threshold: ${HIKARI_LEAK_DETECTION_MS:60000}
 
   flyway:
-    enabled: ${SPRING_FLYWAY_ENABLED:false}
+    enabled: ${SPRING_FLYWAY_ENABLED:true}
     locations: classpath:db/migration
 
   jpa:
