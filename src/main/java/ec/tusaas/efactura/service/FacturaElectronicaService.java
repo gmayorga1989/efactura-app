@@ -16,9 +16,11 @@ import ec.tusaas.efactura.entity.Comprobante;
 import ec.tusaas.efactura.entity.ComprobanteArchivo;
 import ec.tusaas.efactura.entity.ComprobanteDetalle;
 import ec.tusaas.efactura.entity.ComprobanteLogSri;
+import ec.tusaas.efactura.entity.Cotizacion;
 import ec.tusaas.efactura.entity.Empresa;
 import ec.tusaas.efactura.entity.PuntoEmision;
 import ec.tusaas.efactura.repository.ApiKeyRepository;
+import ec.tusaas.efactura.repository.CotizacionRepository;
 import ec.tusaas.efactura.repository.CertificadoRepository;
 import ec.tusaas.efactura.repository.ComprobanteArchivoRepository;
 import ec.tusaas.efactura.repository.ComprobanteDetalleRepository;
@@ -48,6 +50,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -84,6 +87,7 @@ public class FacturaElectronicaService {
   private final AuditoriaService auditoriaService;
   private final DashboardCacheService dashboardCacheService;
   private final VendedorRepository vendedorRepository;
+  private final CotizacionRepository cotizacionRepository;
 
   @Transactional
   public ComprobanteResponse emitir(
@@ -154,7 +158,7 @@ public class FacturaElectronicaService {
     } else {
       c.setOrigen("WEB");
     }
-    c.setCustomData(customDataEnriquecida(request));
+    c.setCustomData(customDataEnriquecida(empresaId, request));
     aplicarVendedor(c, empresaId, request);
     c.setUsuarioCreacion(principal.getEmail());
     c = comprobanteRepository.save(c);
@@ -619,7 +623,7 @@ public class FacturaElectronicaService {
     c.setAmbienteSri(empresa.getAmbienteSri());
     c.setTipoEmision(empresa.getTipoEmision());
     c.setEstadoSri(ESTADO_BORRADOR);
-    c.setCustomData(customDataEnriquecida(request));
+    c.setCustomData(customDataEnriquecida(empresaId, request));
     aplicarVendedor(c, empresaId, request);
     c.setUsuarioModificacion(principal.getEmail());
     c.setFechaModificacion(Instant.now());
@@ -669,7 +673,7 @@ public class FacturaElectronicaService {
     c.setDescuentoTotal(totales.descuento());
     c.setIvaTotal(totales.iva());
     c.setValorTotal(totales.total());
-    c.setCustomData(customDataEnriquecida(request));
+    c.setCustomData(customDataEnriquecida(empresaId, request));
     aplicarVendedor(c, empresaId, request);
     c.setUsuarioModificacion(principal.getEmail());
     c.setFechaModificacion(Instant.now());
@@ -843,7 +847,7 @@ public class FacturaElectronicaService {
     return punto;
   }
 
-  private static Map<String, Object> customDataEnriquecida(FacturaRequest request) {
+  private Map<String, Object> customDataEnriquecida(UUID empresaId, FacturaRequest request) {
     Map<String, Object> cd = new HashMap<>(request.safeCustomData());
     cd.put("puntoEmisionId", request.puntoEmisionId().toString());
     cd.put("tipoIdentificacionReceptor", request.tipoIdentificacionReceptor());
@@ -866,20 +870,44 @@ public class FacturaElectronicaService {
       }
       cd.put("pagos", pagos);
     }
-    if (request.vendedorId() != null) {
-      cd.put("vendedorId", request.vendedorId().toString());
+    UUID vendedorId = resolverVendedorId(empresaId, request);
+    if (vendedorId != null) {
+      cd.put("vendedorId", vendedorId.toString());
+    } else {
+      cd.remove("vendedorId");
     }
     return cd;
   }
 
+  /** Si la factura proviene de cotización, el vendedor siempre es el de la proforma. */
+  private UUID resolverVendedorId(UUID empresaId, FacturaRequest request) {
+    Map<String, Object> cd = request.customData();
+    if (cd != null) {
+      Object cotRaw = cd.get("cotizacionId");
+      if (cotRaw != null && !String.valueOf(cotRaw).isBlank()) {
+        try {
+          UUID cotizacionId = UUID.fromString(String.valueOf(cotRaw).trim());
+          Optional<Cotizacion> cot = cotizacionRepository.findByIdAndEmpresa_Id(cotizacionId, empresaId);
+          if (cot.isPresent()) {
+            return cot.get().getVendedor() != null ? cot.get().getVendedor().getId() : null;
+          }
+        } catch (IllegalArgumentException ignored) {
+          // formato inválido: se usa vendedor del request
+        }
+      }
+    }
+    return request.vendedorId();
+  }
+
   private void aplicarVendedor(Comprobante c, UUID empresaId, FacturaRequest request) {
-    if (request.vendedorId() == null) {
+    UUID vendedorId = resolverVendedorId(empresaId, request);
+    if (vendedorId == null) {
       c.setVendedor(null);
       return;
     }
     Vendedor v =
         vendedorRepository
-            .findByIdAndEmpresa_Id(request.vendedorId(), empresaId)
+            .findByIdAndEmpresa_Id(vendedorId, empresaId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vendedor no encontrado"));
     c.setVendedor(v);
   }
