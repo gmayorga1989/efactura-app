@@ -1,10 +1,18 @@
-# /etc/nginx/sites-available/efactura-app
-# Proxy HTTPS → contenedor en localhost:8080
-# certbot --nginx -d app.tudominio.com
+# /etc/nginx/sites-available/efactura-api
+# API efactura-app (Docker localhost:8080)
+#
+# DNS: api-efactura.appluxora.com → IP del Droplet
+#
+# En el servidor:
+#   sudo cp /opt/efactura-app/nginx.conf.example /etc/nginx/sites-available/efactura-api
+#   sudo ln -sf /etc/nginx/sites-available/efactura-api /etc/nginx/sites-enabled/
+#   sudo nginx -t && sudo systemctl reload nginx
+#   sudo certbot --nginx -d api-efactura.appluxora.com
 
 server {
     listen 80;
-    server_name app.tudominio.com;
+    listen [::]:80;
+    server_name api-efactura.appluxora.com;
 
     location / {
         proxy_pass http://127.0.0.1:8080;
